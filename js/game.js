@@ -1252,23 +1252,78 @@ class Game {
   }
 
   openBlacksmith() {
-    let html = `<h3>铁匠铺 - 强化装备</h3>`;
-    html += `<p style="color:#5a5a4a">铁匠可以帮你强化装备（功能开发中）。</p>`;
-    html += `<p>当前装备：</p>`;
-    for (const slot in this.player.equipment) {
-      const eq = this.player.equipment[slot];
-      if (eq) {
-        html += `<p>${EQUIP_SLOT_NAMES[slot]}: <span style="color:${eq.qualityColor}">${eq.name}</span></p>`;
+    const renderContent = () => {
+      let html = `<h3>🔨 铁匠铺 - 装备修理</h3>`;
+      html += `<p style="color:#5a5a4a;font-size:11px;">修理恢复装备耐久度至最大值。费用=所有装备耐久损失总和×0.5💰</p>`;
+      html += `<div style="display:flex;flex-direction:column;gap:6px;margin:10px 0;">`;
+
+      let totalCost = 0;
+      let needsRepair = 0;
+      for (const slot in this.player.equipment) {
+        const eq = this.player.equipment[slot];
+        if (eq) {
+          const curDur = eq.durability !== undefined ? eq.durability : (eq.maxDurability || 100);
+          const maxDur = eq.maxDurability || 100;
+          const pct = Math.floor(curDur / maxDur * 100);
+          const color = pct > 60 ? "#60c060" : (pct > 30 ? "#ffc040" : "#ff4040");
+          const repairCost = Math.floor((maxDur - curDur) * 0.5);
+          totalCost += repairCost;
+          if (curDur < maxDur) needsRepair++;
+
+          html += `<div style="background:#1a1008;padding:8px;border-radius:3px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="flex:1;">
+              <span style="color:${eq.qualityColor || '#c8b87d'};">${eq.name}</span>
+              <span style="color:#5a5a4a;font-size:10px;"> | ${EQUIP_SLOT_NAMES[slot]}</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="color:${color};font-size:11px;">🔧 ${curDur}/${maxDur} (${pct}%)</span>
+              ${curDur < maxDur ? `<span style="color:#ffa040;font-size:10px;margin-left:6px;">修理费:${repairCost}💰</span>` : `<span style="color:#60c060;font-size:10px;margin-left:6px;">✅ 完好</span>`}
+            </div>
+          </div>`;
+        } else {
+          html += `<div style="background:#1a1008;padding:8px;border-radius:3px;opacity:0.5;">
+            <span style="color:#5a5a4a;">${EQUIP_SLOT_NAMES[slot]}: 空</span>
+          </div>`;
+        }
       }
-    }
-    html += `<button class="btn-small" onclick="window.repairAll()">修理所有装备 (50💰)</button>`;
-    this.ui.showModal("铁匠铺", html);
+      html += `</div>`;
+
+      if (needsRepair === 0 && totalCost === 0) {
+        html += `<p style="color:#60c060;text-align:center;">✅ 所有装备完好无损！</p>`;
+      } else {
+        html += `<p style="color:#c8b87d;text-align:center;">共 ${needsRepair} 件待修理 | 总费用: <b style="color:#ffc040;">${totalCost}💰</b></p>`;
+        html += `<button class="btn-small" onclick="window.repairAll()" style="width:100%;margin-top:8px;">🔨 修理全部装备 (${totalCost}💰)</button>`;
+      }
+      document.getElementById("modal-title").textContent = "🔨 铁匠铺";
+      document.getElementById("modal-body").innerHTML = html;
+    };
+
+    this.ui.showModal("铁匠铺", "");
+    renderContent();
 
     window.repairAll = () => {
-      if (this.player.gold < 50) { this.player.addLog("金币不足。"); return; }
-      this.player.gold -= 50;
-      this.player.addLog("🔨 所有装备已修理完毕。");
-      this.ui.updateAll();
+      let totalCost = 0;
+      let repaired = 0;
+      for (const slot in this.player.equipment) {
+        const eq = this.player.equipment[slot];
+        if (eq && eq.durability !== undefined && eq.maxDurability) {
+          if (eq.durability < eq.maxDurability) {
+            totalCost += Math.floor((eq.maxDurability - eq.durability) * 0.5);
+            eq.durability = eq.maxDurability;
+            repaired++;
+          }
+        }
+      }
+      if (repaired === 0) {
+        this.player.addLog("🔨 所有装备状态完好，无需修理。");
+      } else if (this.player.gold < totalCost) {
+        this.player.addLog(`❌ 金币不足！需要 ${totalCost} 金币。`);
+      } else {
+        this.player.gold -= totalCost;
+        this.player.addLog(`🔨 修理了 ${repaired} 件装备，花费 ${totalCost} 金币。`);
+        renderContent();
+        this.ui.updateAll();
+      }
     };
   }
 
