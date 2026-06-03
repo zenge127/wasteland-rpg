@@ -1,0 +1,15 @@
+node_modules/
+cache/
+scripts/
+package-lock.json
+wasteland-rpg-dist/
+js/bundle.js
+js/leaflet.js
+css/leaflet.css
+*.exe
+*.dll
+*.dat
+*.pak
+*.bin
+.DS_Store
+Thumbs.db

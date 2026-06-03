@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>废土末日 - 世界冒险</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- 开始界面 -->
+<div id="start-screen">
+  <h1>废 土 末 日</h1>
+  <h2>W A S T E L A N D · 世 界 冒 险</h2>
+  <div id="start-menu">
+    <button onclick="window.startNewGame()">⚔️ 开始游戏</button>
+    <button onclick="window.showLoadSlots()">💾 读取进度</button>
+    <button onclick="window.showGameGuide()">📖 游戏知识</button>
+    <button onclick="window.quitGame()">🚪 离开游戏</button>
+  </div>
+  <div class="version">v1.0 · 废土纪元2187年</div>
+</div>
+
+<!-- 顶部状态栏 -->
+<div id="top-bar">
+  <div id="player-info">
+    <span id="player-name">流浪者</span>
+    <span class="sep">|</span>
+    <span>Lv.<span id="player-lv">1</span></span>
+    <span class="sep">|</span>
+    <span>HP: <span id="player-hp">100</span>/<span id="player-maxhp">100</span></span>
+    <span class="sep">|</span>
+    <span>MP: <span id="player-mp">50</span>/<span id="player-maxmp">50</span></span>
+    <span class="sep">|</span>
+    <span>EXP: <span id="player-exp">0</span></span>
+    <span class="sep">|</span>
+    <span>金币: <span id="player-gold">0</span></span>
+  </div>
+  <div id="location-info">废土荒野</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span id="game-clock" style="font-size:11px;color:#8a8a7a;">📅 第1天 06:00</span>
+    <button id="btn-game-menu" onclick="window.toggleGameMenu()" style="background:none;border:1px solid #4a3a2a;color:#c8b87d;font-family:inherit;font-size:12px;cursor:pointer;padding:2px 8px;border-radius:3px;" title="菜单">☰ 菜单</button>
+  </div>
+</div>
+
+<!-- 游戏内菜单弹窗 -->
+<div id="game-menu-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+  <div style="background:#2a2010;border:2px solid #4a3a2a;border-radius:6px;padding:20px;min-width:280px;">
+    <h3 style="color:#f0c040;text-align:center;margin-bottom:16px;">⚙️ 游戏菜单</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="menu-btn" onclick="window.showSaveSlots();window.closeGameMenu()">💾 保存游戏</button>
+      <button class="menu-btn" onclick="window.showLoadSlots();window.closeGameMenu()">📂 读取进度</button>
+      <button class="menu-btn" onclick="window.returnToMainMenu()">🏠 回到主菜单</button>
+      <button class="menu-btn" onclick="window.quitGame()">🚪 退出游戏</button>
+    </div>
+    <button onclick="window.closeGameMenu()" style="display:block;margin:12px auto 0;background:none;border:1px solid #4a3a2a;color:#8a8a7a;font-family:inherit;font-size:12px;cursor:pointer;padding:4px 16px;border-radius:3px;">关闭</button>
+  </div>
+</div>
+
+<!-- 主游戏区域 -->
+<div id="game-container">
+  <!-- 世界地图 Canvas 容器 -->
+  <div id="world-map"></div>
+
+  <!-- 右侧面板 -->
+  <div id="side-panel">
+    <!-- 标签切换 -->
+    <div class="panel-tabs">
+      <button class="tab-btn active" data-tab="tab-actions">行动</button>
+      <button class="tab-btn" data-tab="tab-character">角色</button>
+      <button class="tab-btn" data-tab="tab-skills">技能</button>
+      <button class="tab-btn" data-tab="tab-equipment">装备</button>
+      <button class="tab-btn" data-tab="tab-inventory">物品</button>
+      <button class="tab-btn" data-tab="tab-quests">任务</button>
+      <button class="tab-btn" data-tab="tab-log">日志</button>
+    </div>
+
+    <!-- 行动面板 -->
+    <div id="tab-actions" class="panel-content active">
+      <div class="action-info">
+        <h3>当前位置</h3>
+        <p id="action-location">废土荒野</p>
+        <p id="action-coords">坐标: 0, 0</p>
+        <p id="action-terrain">地形: 陆地</p>
+      </div>
+      <div class="action-buttons">
+        <button id="btn-explore" class="action-btn">🔍 探索周围</button>
+        <button id="btn-rest" class="action-btn">🏕️ 休息恢复</button>
+        <button id="btn-enter-dungeon" class="action-btn" disabled>🏚️ 进入副本</button>
+        <button id="btn-enter-city" class="action-btn" disabled>🏙️ 进入城市</button>
+        <button id="btn-auto-explore" class="action-btn">🤖 自动探索(1次)</button>
+        <button id="btn-multi-explore" class="action-btn">🤖 多次探索</button>
+      </div>
+      <div class="player-quick-stats">
+        <h3>快速属性</h3>
+        <div class="quick-stat">力量: <span id="qs-str">5</span></div>
+        <div class="quick-stat">敏捷: <span id="qs-agi">5</span></div>
+        <div class="quick-stat">智力: <span id="qs-int">5</span></div>
+        <div class="quick-stat">体力: <span id="qs-vit">5</span></div>
+        <div class="quick-stat">智慧: <span id="qs-wis">5</span></div>
+        <div class="quick-stat">精力: <span id="qs-ene">5</span></div>
+      </div>
+    </div>
+
+    <!-- 角色面板 -->
+    <div id="tab-character" class="panel-content">
+      <h2>角色信息</h2>
+      <div class="char-stats">
+        <div class="stat-row"><span class="stat-label">等级</span><span class="stat-value" id="cs-lv">1</span></div>
+        <div class="stat-row"><span class="stat-label">经验值</span><span class="stat-value" id="cs-exp">0 / 100</span></div>
+        <div class="stat-row"><span class="stat-label">可用经验</span><span class="stat-value" id="cs-freeexp">0</span></div>
+        <hr>
+        <div class="stat-row"><span class="stat-label">💪 力量</span><span class="stat-value" id="cs-str">5</span> <small>(物理攻击)</small></div>
+        <div class="stat-row"><span class="stat-label">🏃 敏捷</span><span class="stat-value" id="cs-agi">5</span> <small>(速度/闪避)</small></div>
+        <div class="stat-row"><span class="stat-label">🧠 智力</span><span class="stat-value" id="cs-int">5</span> <small>(魔法攻击)</small></div>
+        <div class="stat-row"><span class="stat-label">❤️ 体力</span><span class="stat-value" id="cs-vit">5</span> <small>(生命值)</small></div>
+        <div class="stat-row"><span class="stat-label">📿 智慧</span><span class="stat-value" id="cs-wis">5</span> <small>(魔法防御/MP)</small></div>
+        <div class="stat-row"><span class="stat-label">⚡ 精力</span><span class="stat-value" id="cs-ene">5</span> <small>(暴击/韧性)</small></div>
+        <hr>
+        <div class="stat-row"><span class="stat-label">物理攻击</span><span class="stat-value" id="cs-atk">10</span></div>
+        <div class="stat-row"><span class="stat-label">魔法攻击</span><span class="stat-value" id="cs-matk">10</span></div>
+        <div class="stat-row"><span class="stat-label">物理防御</span><span class="stat-value" id="cs-def">5</span></div>
+        <div class="stat-row"><span class="stat-label">魔法防御</span><span class="stat-value" id="cs-mdef">5</span></div>
+        <div class="stat-row"><span class="stat-label">速度</span><span class="stat-value" id="cs-spd">10</span></div>
+        <div class="stat-row"><span class="stat-label">闪避率</span><span class="stat-value" id="cs-dodge">5%</span></div>
+        <div class="stat-row"><span class="stat-label">暴击率</span><span class="stat-value" id="cs-crit">5%</span></div>
+      </div>
+      <div class="exp-allocation">
+        <h3>经验分配</h3>
+        <p>可用经验: <span id="ea-free">0</span></p>
+        <div style="display:flex;align-items:center;gap:4px;margin:6px 0;">
+          <label style="font-size:12px;color:#8a8a7a;">分配数量:</label>
+          <input id="ea-amount" type="number" value="1" min="1" style="width:80px;background:#1a1008;border:1px solid #4a3a2a;color:#c8b87d;padding:4px;font-family:inherit;font-size:12px;text-align:center;">
+          <button class="btn-small" onclick="setAllExp()">全部</button>
+        </div>
+        <button class="btn-small" onclick="allocateExp('character')">分配给角色等级</button>
+        <select id="ea-skill-select"></select>
+        <button class="btn-small" onclick="allocateExp('skill')">分配给技能等级</button>
+      </div>
+    </div>
+
+    <!-- 技能面板 -->
+    <div id="tab-skills" class="panel-content">
+      <h2>技能</h2>
+      <div class="skill-slots-info">
+        <p>主动技能槽: <span id="ss-active">0/1</span> (最大<span id="ss-active-max">1</span>)</p>
+        <p>被动技能槽: <span id="ss-passive">0/2</span> (最大<span id="ss-passive-max">2</span>)</p>
+      </div>
+      <div id="skill-list">
+        <h3>已学技能</h3>
+        <div id="learned-skills"></div>
+      </div>
+      <div id="available-skills">
+        <h3>可学习技能</h3>
+        <div id="available-skill-list"></div>
+      </div>
+      <button id="btn-forget-skill" class="action-btn" style="display:none">遗忘选中技能</button>
+    </div>
+
+    <!-- 装备面板 -->
+    <div id="tab-equipment" class="panel-content">
+      <h2>装备</h2>
+      <div class="equip-slots">
+        <div class="equip-slot" data-slot="weapon"><span class="slot-icon">⚔️</span>武器<span id="eq-weapon">空</span></div>
+        <div class="equip-slot" data-slot="head"><span class="slot-icon">⛑️</span>头部<span id="eq-head">空</span></div>
+        <div class="equip-slot" data-slot="body"><span class="slot-icon">🛡️</span>身体<span id="eq-body">空</span></div>
+        <div class="equip-slot" data-slot="belt"><span class="slot-icon">🎒</span>腰带<span id="eq-belt">空</span></div>
+        <div class="equip-slot" data-slot="pants"><span class="slot-icon">👖</span>裤子<span id="eq-pants">空</span></div>
+        <div class="equip-slot" data-slot="shoes"><span class="slot-icon">👢</span>鞋子<span id="eq-shoes">空</span></div>
+        <div class="equip-slot" data-slot="ring"><span class="slot-icon">💍</span>戒指<span id="eq-ring">空</span></div>
+        <div class="equip-slot" data-slot="necklace"><span class="slot-icon">📿</span>项链<span id="eq-necklace">空</span></div>
+        <div class="equip-slot" data-slot="amulet"><span class="slot-icon">🔮</span>护身符<span id="eq-amulet">空</span></div>
+      </div>
+      <div id="equip-detail">
+        <p>点击装备查看详情</p>
+      </div>
+    </div>
+
+    <!-- 物品面板 -->
+    <div id="tab-inventory" class="panel-content">
+      <h2>背包</h2>
+      <p>容量: <span id="inv-count">0</span> / <span id="inv-capacity">30</span>
+        <span style="margin-left:8px;">整理: </span>
+        <button class="btn-tiny" onclick="window.sortInventory('type')" title="按类别排列">📂</button>
+        <button class="btn-tiny" onclick="window.sortInventory('quality')" title="按品质排列">⭐</button>
+        <button class="btn-tiny" onclick="window.sortInventory('name')" title="按名称排列">🔤</button>
+        <button class="btn-tiny" onclick="window.sortInventory('lv')" title="按等级排列">📊</button>
+      </p>
+      <div id="inventory-list"></div>
+      <div id="item-detail">
+        <p>点击物品查看详情</p>
+      </div>
+    </div>
+
+    <!-- 任务面板 -->
+    <div id="tab-quests" class="panel-content">
+      <h2>任务</h2>
+      <div id="quest-list"></div>
+    </div>
+
+    <!-- 日志面板 -->
+    <div id="tab-log" class="panel-content">
+      <h2>冒险日志</h2>
+      <div id="log-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 战斗界面 (默认隐藏) - 重制版 -->
+<div id="combat-screen" style="display:none">
+  <div id="combat-bg"></div>
+  <!-- 战斗特效层 -->
+  <div id="combat-effects-layer"></div>
+  <!-- 敌人区域 -->
+  <div id="combat-enemy-area">
+    <div id="combat-enemy-sprite" class="combat-sprite">
+      <div class="sprite-image enemy-image">👹</div>
+      <div class="sprite-shadow"></div>
+    </div>
+    <div id="combat-enemy-info">
+      <div class="combat-name-tag" id="combat-enemy-name">敌人</div>
+      <div class="combat-hp-bar"><div class="combat-hp-fill enemy" id="combat-enemy-hp-fill"></div></div>
+      <div class="combat-hp-text">❤️ <span id="combat-enemy-hp">50</span>/<span id="combat-enemy-maxhp">50</span></div>
+    </div>
+  </div>
+  <!-- 玩家区域 -->
+  <div id="combat-player-area">
+    <div id="combat-player-sprite" class="combat-sprite">
+      <div class="sprite-image player-image">🧑‍💼</div>
+      <div class="sprite-shadow"></div>
+    </div>
+    <div id="combat-player-info">
+      <div class="combat-name-tag" id="combat-player-name">流浪者</div>
+      <div class="combat-hp-bar"><div class="combat-hp-fill" id="combat-player-hp-fill"></div></div>
+      <div class="combat-hp-text">❤️ <span id="combat-player-hp">100</span>/<span id="combat-player-maxhp">100</span></div>
+      <div class="combat-mp-text">💙 <span id="combat-player-mp">50</span>/<span id="combat-player-maxmp">50</span></div>
+    </div>
+  </div>
+  <!-- 战斗日志 -->
+  <div id="combat-log"></div>
+  <!-- 行动按钮 -->
+  <div id="combat-actions">
+    <button class="combat-btn" onclick="combatAttack()">⚔️</button>
+    <button class="combat-btn" id="combat-skills-btn">✨</button>
+    <button class="combat-btn" onclick="combatDefend()">🛡️</button>
+    <button class="combat-btn" onclick="combatItem()">🎒</button>
+    <button class="combat-btn" onclick="combatFlee()">🏃</button>
+    <button class="combat-btn" onclick="toggleAutoCombat()" id="btn-auto-combat">🤖</button>
+  </div>
+  <div id="combat-skill-select" style="display:none"></div>
+  <div id="combat-item-select" style="display:none"></div>
+</div>
+
+<!-- 六边形移动地图容器 -->
+<div id="hexmap-screen" style="display:none">
+  <div id="hexmap-header">
+    <span id="hexmap-title">废土旅行</span>
+    <span id="hexmap-stats">步数: 0 | 耗时: 0分钟</span>
+  </div>
+  <canvas id="hexmap-canvas"></canvas>
+  <div id="hexmap-controls">
+    <div class="hexmap-dpad">
+      <button class="hex-dir" data-dx="0" data-dy="-1">▲</button>
+      <button class="hex-dir" data-dx="-1" data-dy="0">◄</button>
+      <button class="hex-dir" data-dx="0" data-dy="1">▼</button>
+      <button class="hex-dir" data-dx="1" data-dy="0">►</button>
+    </div>
+    <div id="hexmap-info">
+      <span id="hexmap-tile-info">平原 - 开阔的平原</span>
+    </div>
+    <button class="btn-small" onclick="window.leaveHexMap()">🚪 退出旅行</button>
+  </div>
+</div>
+
+<!-- 城市界面 (默认隐藏) -->
+<div id="city-screen" style="display:none">
+  <div id="city-header">
+    <h2 id="city-name">城市名</h2>
+    <button onclick="leaveCity()">离开城市</button>
+  </div>
+  <div id="city-content">
+    <div class="city-facilities">
+      <div class="city-facility-card" onclick="cityShop()">
+        <span class="facility-icon">🏪</span>
+        <span class="facility-name">商 店</span>
+        <span class="facility-desc">购买药水、装备与船只</span>
+      </div>
+      <div class="city-facility-card" onclick="cityTrainer()">
+        <span class="facility-icon">📚</span>
+        <span class="facility-name">技能教官</span>
+        <span class="facility-desc">学习强大的战斗技能</span>
+      </div>
+      <div class="city-facility-card" onclick="cityInn()">
+        <span class="facility-icon">🏨</span>
+        <span class="facility-name">旅 馆</span>
+        <span class="facility-desc">休息恢复生命与魔法</span>
+      </div>
+      <div class="city-facility-card" onclick="cityBlacksmith()">
+        <span class="facility-icon">🔨</span>
+        <span class="facility-name">铁匠铺</span>
+        <span class="facility-desc">修理与强化你的装备</span>
+      </div>
+      <div class="city-facility-card" onclick="cityQuestBoard()">
+        <span class="facility-icon">📋</span>
+        <span class="facility-name">任务板</span>
+        <span class="facility-desc">接受悬赏赚取赏金</span>
+      </div>
+      <div class="city-facility-card" onclick="cityStorage()">
+        <span class="facility-icon">📦</span>
+        <span class="facility-name">储藏室</span>
+        <span class="facility-desc">存取物品 · 10000格 · 堆叠9999</span>
+      </div>
+    </div>
+    <div id="city-detail"><p>🏙️ 欢迎来到幸存者聚集地，选择设施开始交互。</p></div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div id="modal-overlay" style="display:none">
+  <div id="modal-content">
+    <div id="modal-header">
+      <h3 id="modal-title"></h3>
+      <button id="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="js/bundle.js"></script>
+</body>
+</html>

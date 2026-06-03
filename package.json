@@ -1,0 +1,33 @@
+{
+  "name": "wasteland-rpg",
+  "version": "1.0.0",
+  "description": "废土末日 - 世界冒险",
+  "main": "index.html",
+  "window": {
+    "title": "废土末日 - 世界冒险",
+    "width": 1280,
+    "height": 800,
+    "min_width": 1024,
+    "min_height": 700,
+    "icon": "",
+    "resizable": true,
+    "frame": true,
+    "show": true,
+    "toolbar": false
+  },
+  "dependencies": {
+    "playwright": "^1.60.0",
+    "playwright-core": "^1.60.0"
+  },
+  "devDependencies": {
+    "nw-builder": "^4.17.11"
+  },
+  "scripts": {
+    "start": "npx nw .",
+    "build": "node scripts/build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
