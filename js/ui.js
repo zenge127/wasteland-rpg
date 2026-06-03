@@ -910,7 +910,7 @@ class UIManager {
     document.getElementById("city-screen").style.display = "block";
     document.getElementById("game-container").style.display = "none";
     const stars = "★".repeat(city.size) + "☆".repeat(5 - city.size);
-    document.getElementById("city-name").textContent = `🏙️ ${city.name} · ${city.country}`;
+    document.getElementById("city-name").textContent = `🏙️ ${city.name} · ${city.country || "废土"}`;
     document.getElementById("city-detail").innerHTML = `
       <p style="font-size:15px;margin-bottom:6px;">📊 城市规模: <span style="color:#f0c040;">${stars}</span></p>
       <p style="color:#c8b87d;">${city.desc}</p>

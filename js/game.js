@@ -416,6 +416,11 @@ class Game {
         worldSeed: WORLD_DATA ? WORLD_DATA._seed || 0 : 0,
         hasBoat: this.player.hasBoat, boatType: this.player.boatType,
         mainSkillId: this.player.mainSkillId,
+        learnedSkills: { active: this.player.learnedSkills.active, passive: this.player.learnedSkills.passive },
+        skillExp: {...this.player.skillExp},
+        inventory: this.player.inventory,
+        equipment: this.player.equipment,
+        storage: this.player.storage,
         gameDay: GAME_TIME.day, gameHour: GAME_TIME.hour, gameMinute: GAME_TIME.minute,
       };
       localStorage.setItem(`wasteland_save_${slot}`, JSON.stringify(data));
@@ -468,6 +473,11 @@ class Game {
         this.player.hasBoat = data.hasBoat || false;
         this.player.boatType = data.boatType || null;
         this.player.mainSkillId = data.mainSkillId || null;
+        this.player.learnedSkills = data.learnedSkills || { active: [], passive: [] };
+        this.player.skillExp = data.skillExp || {};
+        this.player.inventory = data.inventory || [];
+        this.player.equipment = data.equipment || this.player.equipment;
+        this.player.storage = data.storage || [];
         if (data.gameDay !== undefined) { GAME_TIME.day = data.gameDay; GAME_TIME.hour = data.gameHour; GAME_TIME.minute = data.gameMinute; }
         this.worldMap.centerOn(this.player.position.x, this.player.position.y, 2);
         document.getElementById("modal-overlay").style.display = "none";
@@ -508,8 +518,14 @@ class Game {
           expToNext: this.player.expToNext,
           baseStats: {...this.player.baseStats}, freeStatPoints: this.player.freeStatPoints,
           gold: this.player.gold, position: {...this.player.position},
+          worldSeed: WORLD_DATA ? WORLD_DATA._seed || 0 : 0,
           hasBoat: this.player.hasBoat, boatType: this.player.boatType,
           mainSkillId: this.player.mainSkillId,
+          learnedSkills: { active: this.player.learnedSkills.active, passive: this.player.learnedSkills.passive },
+          skillExp: {...this.player.skillExp},
+          inventory: this.player.inventory,
+          equipment: this.player.equipment,
+          storage: this.player.storage,
           gameDay: GAME_TIME.day, gameHour: GAME_TIME.hour, gameMinute: GAME_TIME.minute,
         };
         localStorage.setItem("wasteland_save_1", JSON.stringify(data));
@@ -533,6 +549,11 @@ class Game {
         worldSeed: WORLD_DATA ? WORLD_DATA._seed || 0 : 0,
         hasBoat: this.player.hasBoat, boatType: this.player.boatType,
         mainSkillId: this.player.mainSkillId,
+        learnedSkills: { active: this.player.learnedSkills.active, passive: this.player.learnedSkills.passive },
+        skillExp: {...this.player.skillExp},
+        inventory: this.player.inventory,
+        equipment: this.player.equipment,
+        storage: this.player.storage,
         gameDay: GAME_TIME.day, gameHour: GAME_TIME.hour, gameMinute: GAME_TIME.minute,
       };
       localStorage.setItem("wasteland_save_1", JSON.stringify(data));
@@ -1058,8 +1079,8 @@ class Game {
       const eq = generateEquipItem(base, quality, this.player.lv);
       if (!eq) return;
       const price = Math.floor(base.buyPrice * QUALITY_COLORS[quality].mul);
-      if (this.player.gold < price * 2) { this.player.addLog("金币不足！"); return; }
-      this.player.gold -= price * 2;
+      if (this.player.gold < price) { this.player.addLog("金币不足！"); return; }
+      this.player.gold -= price;
       if (this.player.addItem(eq)) {
         this.player.addLog(`🛒 购买了 ${eq.name}[${eq.qualityName}]。`);
       }

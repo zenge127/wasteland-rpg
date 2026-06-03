@@ -397,7 +397,7 @@ class WorldMap {
           // 转换为类似旧city格式
           const cityData = {
             name: loc.name, size: loc.size || 1, desc: loc.desc,
-            type: loc.type, x: loc.x, y: loc.y
+            type: loc.type, x: loc.x, y: loc.y, country: "废土"
           };
           if (this.onCityClick) this.onCityClick(cityData);
         }
