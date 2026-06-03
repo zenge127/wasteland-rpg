@@ -343,10 +343,11 @@ class WorldMap {
 
     // 检查不可通行
     const tile = WORLD_DATA.tiles[idx];
-    if (!TILE_PASSABLE[tile]) {
+    if (!this._canPassTile(tile)) {
       if (this.onMapClick) {
         const tileName = TILE_NAMES[tile] || "未知";
-        this.onMapClick({ type: "blocked", msg: `🧱 ${tileName}无法通行。${tile === TILE.OCEAN || tile === TILE.DEEP_OCEAN ? "需要船只才能渡海。" : ""}` });
+        const hint = (tile === TILE.OCEAN || tile === TILE.DEEP_OCEAN) ? "需要船只才能渡海。" : "";
+        this.onMapClick({ type: "blocked", msg: `🧱 ${tileName}无法通行。${hint}` });
       }
       return;
     }
@@ -416,8 +417,10 @@ class WorldMap {
 
   _showMovePopup(screenX, screenY, tileX, tileY) {
     const dist = Math.floor(tileDist(this.player.position.x, this.player.position.y, tileX, tileY));
-    const terrain = TILE_NAMES[this._getTile(tileX, tileY)] || "未知";
-    const etaMin = dist * 2; // ~2分钟/tile
+    const tile = this._getTile(tileX, tileY);
+    const terrain = TILE_NAMES[tile] || "未知";
+    const moveCostPerTile = this._getMoveCost(tile);
+    const etaMin = dist * moveCostPerTile;
 
     const el = document.createElement("div");
     el.className = "map-popup";
@@ -524,6 +527,10 @@ class WorldMap {
 
     if (dist < 1) return;
 
+    // 检查目的地tile以确定移动成本
+    const destTile = this._getTile(targetX, targetY);
+    const moveCostPerTile = this._getMoveCost(destTile);
+
     // 简易路径：直线插值
     const steps = Math.ceil(dist);
     this.movePath = [];
@@ -537,10 +544,9 @@ class WorldMap {
     this.moveStepIndex = 0;
 
     // 游戏时间
-    advanceGameTime(dist * 2);
+    advanceGameTime(Math.floor(dist * moveCostPerTile));
     if (this.onMapClick) {
-      const tile = this._getTile(targetX, targetY);
-      this.onMapClick({ type: "move", tileX: targetX, tileY: targetY, dist: Math.floor(dist), terrain: TILE_NAMES[tile] || "未知" });
+      this.onMapClick({ type: "move", tileX: targetX, tileY: targetY, dist: Math.floor(dist), terrain: TILE_NAMES[destTile] || "未知" });
     }
 
     this.isMoving = true;
@@ -564,7 +570,7 @@ class WorldMap {
     const step = this.movePath[this.moveStepIndex];
     // 检查通行性
     const tile = this._getTile(step.x, step.y);
-    if (!TILE_PASSABLE[tile]) {
+    if (!this._canPassTile(tile)) {
       this.isMoving = false;
       this._centerOnPlayer();
       this.render();
@@ -607,9 +613,10 @@ class WorldMap {
     if (nx < 0 || nx >= WORLD_DATA.width || ny < 0 || ny >= WORLD_DATA.height) return false;
 
     const tile = this._getTile(nx, ny);
-    if (!TILE_PASSABLE[tile]) {
+    if (!this._canPassTile(tile)) {
       if (this.onMapClick) {
-        this.onMapClick({ type: "blocked", msg: `🧱 ${TILE_NAMES[tile]}无法通行。` });
+        const hint = (tile === TILE.OCEAN || tile === TILE.DEEP_OCEAN) ? "需要船只才能渡海。" : "";
+        this.onMapClick({ type: "blocked", msg: `🧱 ${TILE_NAMES[tile]}无法通行。${hint}` });
       }
       return false;
     }
@@ -617,7 +624,8 @@ class WorldMap {
     this.player.position.x = nx;
     this.player.position.y = ny;
     this._exploreAround(nx, ny, 2);
-    advanceGameTime(10 + Math.floor(Math.random() * 15));
+    const moveCost = this._getMoveCost(tile);
+    advanceGameTime(moveCost + Math.floor(Math.random() * 10));
 
     if (this.onMapClick) {
       this.onMapClick({ type: "move", tileX: nx, tileY: ny, dist: 1, terrain: TILE_NAMES[tile] });
@@ -637,6 +645,23 @@ class WorldMap {
   _getTile(x, y) {
     if (x < 0 || x >= WORLD_DATA.width || y < 0 || y >= WORLD_DATA.height) return TILE.OCEAN;
     return WORLD_DATA.tiles[y * WORLD_DATA.width + x];
+  }
+
+  // 检查tile是否可通行（考虑船只）
+  _canPassTile(tile) {
+    if (TILE_PASSABLE[tile]) return true;
+    // 海洋/深海/河流需要船只
+    if ((tile === TILE.OCEAN || tile === TILE.DEEP_OCEAN || tile === TILE.RIVER) && this.player.hasBoat) {
+      return true;
+    }
+    return false;
+  }
+
+  _getMoveCost(tile) {
+    // 海洋移动较慢
+    if (tile === TILE.OCEAN || tile === TILE.DEEP_OCEAN) return 4; // 海上每格4分钟
+    if (tile === TILE.RIVER) return 3;
+    return 2; // 陆地每格2分钟
   }
 
   getTerrainAtPlayer() {

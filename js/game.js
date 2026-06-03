@@ -1246,8 +1246,20 @@ class Game {
       return;
     }
     this.player.gold -= cost;
-    const cs = this.player.getCombatStats();
-    this.player.addLog(`🏨 在旅馆休息了一晚，完全恢复了！花费 ${cost} 金币。`);
+    // 休息获得经验（整理装备、回忆战斗经验）
+    const restExp = 30 + Math.floor(this.player.lv * 5);
+    this.player.gainExp(restExp);
+    // 恢复少量装备耐久
+    let repairedCount = 0;
+    for (const slot in this.player.equipment) {
+      const eq = this.player.equipment[slot];
+      if (eq && eq.durability !== undefined && eq.maxDurability && eq.durability < eq.maxDurability) {
+        eq.durability = Math.min(eq.maxDurability, eq.durability + Math.floor(eq.maxDurability * 0.15));
+        repairedCount++;
+      }
+    }
+    this.player.addLog(`🏨 在旅馆休息了一晚，整理了装备和战斗经验。经验 +${restExp}，花费 ${cost} 金币。${repairedCount > 0 ? `顺便修补了 ${repairedCount} 件装备。` : ""}`);
+    advanceGameTime(480 + Math.floor(Math.random() * 120)); // 休息8-10小时
     this.ui.updateAll();
   }
 

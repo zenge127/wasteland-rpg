@@ -976,17 +976,16 @@ class UIManager {
   }
 
   actionRest() {
-    // 休息恢复：获得少量经验 + 清除战斗状态
+    // 休息恢复：获得少量经验
     const restExp = 10 + Math.floor(Math.random() * 15);
     this.player.gainExp(restExp);
-    this.player.addLog(`🏕️ 你找了个安全的地方休息了一阵，体力恢复了。`);
-    this.player.addLog(`💡 休息时整理了装备和思路，经验 +${restExp}。`);
-    // 如果战斗中，恢复满HP/MP
+    this.player.addLog(`🏕️ 你找了个安全的地方休息了一阵，整理了装备和思路。经验 +${restExp}。`);
+    // 战斗中不能休息
     if (this.combat && this.combat.active) {
-      // 战斗中不能休息
       this.player.addLog("⚠️ 战斗中无法休息！");
       return;
     }
+    advanceGameTime(30 + Math.floor(Math.random() * 60)); // 休息30-90分钟
     this.updateAll();
   }
 
